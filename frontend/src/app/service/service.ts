@@ -1,13 +1,14 @@
 import { Injectable } from '@angular/core';
 import {Observable} from 'rxjs';
 import {HttpClient} from '@angular/common/http';
+import {environment} from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class Service {
 
-  private apiUrl = '/api/students';
+  private readonly apiUrl = environment.apiUrl;
 
   constructor(private http: HttpClient) { }
 
@@ -16,7 +17,7 @@ export class Service {
    * @returns An Observable with the list of all students
    */
   getAllStudents(): Observable<any[]> {
-    return this.http.get<any[]>(this.apiUrl);
+    return this.http.get<any[]>(`${this.apiUrl}/students`);
   }
 
   /**

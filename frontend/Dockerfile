@@ -1,22 +1,24 @@
 # Stage 1: Build the Angular application
-FROM node:20-alpine AS build
-WORKDIR /usr/src/app
-COPY package*.json ./
-RUN npm install
+FROM node:20 AS build
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
 COPY . .
-# Assurez-vous que le nom du projet dans "output-path" correspond à votre angular.json
-RUN npm run build -- --configuration production --output-path=./dist
+RUN npm run build
 
-# Étape 2: Service de l'application avec Nginx
-FROM nginx:1.25-alpine
-# Copier les fichiers statiques compilés
-COPY --from=build /usr/src/app/dist /usr/share/nginx/html
-# Supprimer la configuration par défaut de Nginx
-RUN rm /etc/nginx/conf.d/default.conf
-# Copier notre propre configuration Nginx
-COPY nginx-prod.conf /etc/nginx/conf.d/etudiant.com.conf
+# Stage 2: Serve the application with Nginx
+FROM nginx:alpine
+# Utiliser l'image officielle de NGINX comme base
+#FROM nginx:latest
+
+# Copier les fichiers statiques du projet (HTML, CSS, JS)
+COPY --from=build /app/dist/frontend/browser /usr/share/nginx/html
+
+# Copier le fichier de configuration `development.conf` dans le dossier dédié
+#COPY development.conf /etc/nginx/sites-available/development.conf
+
+# Configure Nginx for Angular routing
+COPY nginx-dev.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
-EXPOSE 443
-
 CMD ["nginx", "-g", "daemon off;"]
