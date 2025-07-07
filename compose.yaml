@@ -1,24 +1,12 @@
 services:
   db:
-    image: "postgres:${POSTGRES_IMAGE_TAG:-16}" # Utilise POSTGRES_IMAGE_TAG ou '16' par défaut
-    #container_name: db-etudiant-container
+    image: "postgres:${POSTGRES_IMAGE_TAG:-16}"
     environment:
       - "POSTGRES_DB=${POSTGRES_DB}"
       - "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}"
       - "POSTGRES_USER=${POSTGRES_USER}"
-    ports:
-      - "${DB_HOST_PORT:-5432}:5432" # Port de l'hôte : Port du conteneur
-#    env_file:
-#      - .env # <--- LIGNE IMPORTANTE ! variables d'environnement
     volumes:
       - etudiant-data:/var/lib/postgresql/data
-    #  - ./sql/sql:/docker-entrypoint-initdb.d
-    #      - ./src/main/resources/sql:/docker-entrypoint-initdb.d
-    # Effacer les volumes et recréer de nouvelles données (relir le dossier 'sql' :
-    # docker compose down
-    # docker compose down --volumes --remove-orphans  # supprime le volume
-    # docker compose up --build # si première fois
-    # docker compose up -d # sinon
     healthcheck:
       test: ["CMD", "pg_isready", "-h", "db", "-U", "${POSTGRES_USER}"]
       interval: 10s
@@ -26,40 +14,42 @@ services:
       retries: 5
     networks:
       - etudiant-network
+
   app:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    #container_name: app-etudiant-container
     depends_on:
       db:
         condition: service_healthy
-    ports:
-      - "${APP_HOST_PORT:-8080}:8080" # Port de l'hôte : Port du conteneur
+    # Le port n'est plus exposé à l'hôte, NGINX s'en charge
     environment:
-      - "SPRING_DATASOURCE_URL=jdbc:postgresql://db:${DB_HOST_PORT:-5432}/${POSTGRES_DB}?charset=UTF8"
+      - "SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${POSTGRES_DB}?charset=UTF8"
       - "SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}"
       - "SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}"
-#    env_file:
-#      - .env # <--- LIGNE IMPORTANTE ! variables d'environnement
     networks:
       - etudiant-network
 
-  frontend:
+  nginx: # Ancien service 'frontend' renommé et remplacé
     build:
       context: ./frontend
-      dockerfile: Dockerfile
-    #container_name: frontend-etudiant-container
+      dockerfile: Dockerfile.prod # On utilise le Dockerfile de production
     ports:
-      - "${FRONT_HOST_PORT:-4200}:80" # Port dU FRONTEND: Port du conteneur
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Monter les certificats SSL et la configuration de l'hôte dans le conteneur
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /var/www/certbot:/var/www/certbot
     depends_on:
       - app
     networks:
       - etudiant-network
 
 volumes:
-  etudiant-data: # Définit le volume nommé etudiant-data
+  etudiant-data:
 
 networks:
-  etudiant-network: # Définit le réseau nommé etudiant-network
+  etudiant-network:
     driver: bridge
+
