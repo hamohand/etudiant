@@ -1,0 +1,20 @@
+# Utiliser une image Node.js
+FROM node:20-alpine
+
+# Définir le répertoire de travail
+WORKDIR /app
+
+# Copier package.json pour installer les dépendances
+# Le 'npm install' est exécuté uniquement si package.json change
+COPY package*.json ./
+RUN npm install
+
+# Le reste du code source sera monté via un volume dans docker-compose.
+# Cela évite de copier les fichiers à chaque build.
+
+# Exposer le port du serveur de dev Angular
+EXPOSE 4200
+
+# Commande pour démarrer l'application avec hot-reload
+# --host 0.0.0.0 est crucial pour rendre le serveur accessible depuis l'extérieur du conteneur
+CMD ["npm", "start", "--", "--host", "0.0.0.0"]

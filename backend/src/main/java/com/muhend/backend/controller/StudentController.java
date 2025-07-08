@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/students")
 @CrossOrigin(origins = "http://localhost:4200") // Allow requests from any origin (for development)
 public class StudentController {
 
@@ -25,7 +25,7 @@ public class StudentController {
      * Get all students
      * @return List of all students
      */
-    @GetMapping("/students")
+    @GetMapping
     public ResponseEntity<List<Student>> getAllStudents() {
         List<Student> students = studentService.getAllStudents();
         return new ResponseEntity<>(students, HttpStatus.OK);

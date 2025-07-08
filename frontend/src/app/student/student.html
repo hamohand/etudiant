@@ -1,5 +1,5 @@
 <div class="student-container">
-  <h2>Liste des étudiants avec une note supérieure à 10</h2>
+  <h2>Liste des étudiants</h2>
 
   <div *ngIf="isLoading" class="loading">
     Chargement en cours...
@@ -25,4 +25,65 @@
       </tbody>
     </table>
   </div>
+  <div class="container">
+    <h2>Gestion des Étudiants</h2>
+
+    <!-- Formulaire pour ajouter un nouvel étudiant -->
+    <div class="form-container">
+      <h3>Ajouter un étudiant</h3>
+      <!-- (ngSubmit) appelle la méthode addStudent() -->
+      <form #addForm="ngForm" (ngSubmit)="addStudent()">
+        <div class="form-group">
+          <label for="nom">Nom:</label>
+          <!-- [(ngModel)] lie l'input à la propriété newStudent.nom -->
+          <input type="text" id="nom" name="nom" [(ngModel)]="newStudent.nom" required>
+        </div>
+        <div class="form-group">
+          <label for="note">Note:</label>
+          <input type="number" id="note" name="note" [(ngModel)]="newStudent.note" required>
+        </div>
+        <button type="submit" [disabled]="isLoading || !addForm.valid">
+          {{ isLoading ? 'En cours...' : 'Ajouter' }}
+        </button>
+      </form>
+    </div>
+
+    <!-- Affichage des messages d'erreur ou de chargement -->
+    <div *ngIf="isLoading" class="loading-message">Chargement des données...</div>
+    <div *ngIf="error" class="error-message">{{ error }}</div>
+
+    <!-- Liste des étudiants -->
+    <div class="student-list">
+      <h3>Liste des étudiants actuels</h3>
+      <table>
+        <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nom</th>
+          <th>Note</th>
+          <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <!-- La boucle *ngFor affiche chaque étudiant -->
+        <tr *ngFor="let student of students">
+          <td>{{ student.id }}</td>
+          <td>{{ student.nom }}</td>
+          <td>{{ student.note }}</td>
+          <td>
+            <!-- Le bouton (click) appelle la méthode de suppression avec l'ID de l'étudiant -->
+            <button class="delete-btn" (click)="deleteStudentById(student.id)" [disabled]="isLoading">
+              Supprimer
+            </button>
+          </td>
+        </tr>
+        <!-- Message si la liste est vide -->
+        <tr *ngIf="!isLoading && students.length === 0">
+          <td colspan="4">Aucun étudiant trouvé.</td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
 </div>
