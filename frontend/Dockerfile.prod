@@ -9,18 +9,16 @@ COPY . .
 # Assurez-vous que le nom du projet dans "output-path" correspond à votre angular.json
 RUN npm run build -- --configuration production --output-path=./dist
 
-# --- AJOUT POUR LE DÉBOGAGE (MODIFIÉ) ---
-# L'ajout de "echo" force Docker à exécuter cette commande au lieu d'utiliser le cache.
-RUN echo "--- Contenu du dossier 'dist' ---" && ls -laR dist
-# ----------------------------------------
-
-
 # Étape 2: Service de l'application avec Nginx
 FROM nginx:1.25-alpine
+
 # Copier les fichiers statiques compilés
-COPY --from=build /usr/src/app/dist/frontend/browser  /usr/share/nginx/html
+####COPY --from=build /usr/src/app/dist/frontend/browser/  /usr/share/nginx/html
+COPY --from=build /usr/src/app/dist/browser/ /usr/share/nginx/html
+
 # Supprimer la configuration par défaut de Nginx
 RUN rm /etc/nginx/conf.d/default.conf
+
 # Copier notre propre configuration Nginx
 COPY nginx-prod.conf /etc/nginx/conf.d/etudiant.com.conf
 
