@@ -7,6 +7,12 @@ COPY . .
 # Assurez-vous que le nom du projet dans "output-path" correspond à votre angular.json
 RUN npm run build -- --configuration production --output-path=./dist
 
+# --- AJOUT POUR LE DÉBOGAGE ---
+# La commande suivante listera le contenu du répertoire de build.
+# Regardez la sortie de la commande "docker-compose up --build" pour voir la structure des fichiers.
+RUN ls -laR dist
+# -----------------------------
+
 # Étape 2: Service de l'application avec Nginx
 FROM nginx:1.25-alpine
 # Copier les fichiers statiques compilés
