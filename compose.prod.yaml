@@ -24,11 +24,13 @@ services:
   ${BACKEND_SERVICE_NAME}:
     build: ./backend
     container_name: ${PROJECT_NAME}-${BACKEND_SERVICE_NAME}
+    env_file:
+      - .env # Ajout pour charger les variables depuis le fichier .en
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DB_SERVICE_NAME}:5432/${POSTGRES_DB}
     networks:
       - default
       - webproxy
-    environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DB_SERVICE_NAME}:5432/${POSTGRES_DB}
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=webproxy"
