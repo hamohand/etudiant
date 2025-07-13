@@ -28,8 +28,8 @@ services:
       - etudiant-network
   app:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: ../backend
+      dockerfile: ../backend/Dockerfile
     #container_name: app-etudiant-container
     depends_on:
       db:
@@ -47,7 +47,7 @@ services:
 
   frontend:
     build:
-      context: ./frontend
+      context: ../frontend
       dockerfile: Dockerfile.dev.dev
     #container_name: frontend-etudiant-container
     ports:
