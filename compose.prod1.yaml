@@ -1,0 +1,58 @@
+services:
+  db:
+    image: "postgres:${POSTGRES_IMAGE_TAG:-16}"
+    restart: unless-stopped
+    env_file:
+      - .env # Les variables POSTGRES_* sont lues depuis ce fichier
+    volumes:
+      - etudiant-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "db", "-U", "${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - etudiant-network
+
+  app:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env # Ajout pour charger les variables depuis le fichier .env
+    # Le port n'est pas exposé à l'hôte, NGINX s'en charge
+    environment:
+      - "SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${POSTGRES_DB}?charset=UTF8"
+      - "SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}"
+      - "SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}"
+    networks:
+      - etudiant-network
+
+  frontend-proxy: # Ancien service 'frontend' renommé et remplacé
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod # On utilise le Dockerfile de production
+    restart: unless-stopped
+    ports:
+      - "${FRONT_PROXY_HTTP_PORT:-80}:80"      # HTTP : port configurable via .env
+      - "${FRONT_PROXY_HTTPS_PORT:-443}:443"   # HTTPS : port configurable via .env
+    volumes:
+      # Monter les certificats SSL et la configuration de l'hôte dans le conteneur
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /var/www/certbot:/var/www/certbot
+    depends_on:
+      - app
+    networks:
+      - etudiant-network
+
+# Définitions explicites des volumes et réseaux pour une meilleure clarté
+volumes:
+  etudiant-data:
+
+networks:
+  etudiant-network:
+    driver: bridge

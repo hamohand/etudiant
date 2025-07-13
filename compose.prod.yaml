@@ -1,57 +1,82 @@
 services:
-  db:
-    image: "postgres:${POSTGRES_IMAGE_TAG:-16}"
+  # --- SERVICE BASE DE DONNÉES (inchangé) ---
+  ${DB_SERVICE_NAME}:
+    image: postgres:16-alpine
+    container_name: ${PROJECT_NAME}-${DB_SERVICE_NAME}
+    restart: unless-stopped
     env_file:
-      - .env # Centralisation des variables d'environnement sensibles
-    environment:
-      - "POSTGRES_DB=${POSTGRES_DB}"
-      - "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}"
-      - "POSTGRES_USER=${POSTGRES_USER}"
-    volumes:
-      - etudiant-data:/var/lib/postgresql/data
+      - .env # Les variables POSTGRES_* sont lues depuis ce fichier
+#    environment:
+#      - POSTGRES_USER=${POSTGRES_USER}
+#      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+#      - POSTGRES_DB=${POSTGRES_DB}
     healthcheck:
-      test: ["CMD", "pg_isready", "-h", "db", "-U", "${POSTGRES_USER}"]
+      test: ["CMD", "pg_isready", "-h", "${DB_SERVICE_NAME}", "-U", "${POSTGRES_USER}"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - etudiant-network
-
-  app:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    depends_on:
-      db:
-        condition: service_healthy
-    # Le port n'est plus exposé à l'hôte, NGINX s'en charge
-    environment:
-      - "SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${POSTGRES_DB}?charset=UTF8"
-      - "SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}"
-      - "SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}"
-    networks:
-      - etudiant-network
-
-  frontend-proxy: # Ancien service 'frontend' renommé et remplacé
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.prod # On utilise le Dockerfile.dev de production
-    ports:
-      - "${FRONT_PROXY_HTTP_PORT:-80}:80"      # HTTP : port configurable via .env
-      - "${FRONT_PROXY_HTTPS_PORT:-443}:443"   # HTTPS : port configurable via .env
     volumes:
-      # Monter les certificats SSL et la configuration de l'hôte dans le conteneur
-      - /etc/letsencrypt:/etc/letsencrypt:ro
-      - /var/www/certbot:/var/www/certbot
-    depends_on:
-      - app
+      - ${DB_VOLUME_NAME}:/var/lib/postgresql/data
     networks:
-      - etudiant-network
+      - default
+
+  # --- SERVICE BACKEND ---
+  ${BACKEND_SERVICE_NAME}:
+    build: ./backend
+    container_name: ${PROJECT_NAME}-${BACKEND_SERVICE_NAME}
+    networks:
+      - default
+      - webproxy
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DB_SERVICE_NAME}:5432/${POSTGRES_DB}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=webproxy"
+
+      # --- Routeur HTTPS (sécurisé) ---
+      - "traefik.http.routers.${BACKEND_SERVICE_NAME}-secure.rule=Host(`${BACKEND_API_DOMAIN}`)"
+      - "traefik.http.routers.${BACKEND_SERVICE_NAME}-secure.entrypoints=websecure"
+      - "traefik.http.routers.${BACKEND_SERVICE_NAME}-secure.tls.certresolver=le"
+      - "traefik.http.services.${BACKEND_SERVICE_NAME}.loadbalancer.server.port=${BACKEND_INTERNAL_PORT}"
+
+      # --- Routeur HTTP (pour la redirection) ---
+      # Note : On réutilise le même middleware "https-redirect" défini plus haut
+      - "traefik.http.routers.${BACKEND_SERVICE_NAME}-http.rule=Host(`${BACKEND_API_DOMAIN}`)"
+      - "traefik.http.routers.${BACKEND_SERVICE_NAME}-http.entrypoints=web"
+      - "traefik.http.routers.${BACKEND_SERVICE_NAME}-http.middlewares=https-redirect"
+
+  # --- SERVICE FRONTEND ---
+  ${FRONTEND_SERVICE_NAME}:
+    build: ./frontend
+    container_name: ${PROJECT_NAME}-${FRONTEND_SERVICE_NAME}
+    networks:
+      - default
+      - webproxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=webproxy"
+
+      # --- Middleware (défini une seule fois, réutilisé partout) ---
+      - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
+
+      # --- Routeur HTTPS (sécurisé) ---
+      - "traefik.http.routers.${FRONTEND_SERVICE_NAME}-secure.rule=Host(`${FRONTEND_DOMAIN}`) || Host(`${WWW_FRONTEND_DOMAIN}`)"
+      - "traefik.http.routers.${FRONTEND_SERVICE_NAME}-secure.entrypoints=websecure"
+      - "traefik.http.routers.${FRONTEND_SERVICE_NAME}-secure.tls.certresolver=le"
+      - "traefik.http.services.${FRONTEND_SERVICE_NAME}.loadbalancer.server.port=80" # Port Nginx/Angular
+
+      # --- Routeur HTTP (pour la redirection) ---
+      - "traefik.http.routers.${FRONTEND_SERVICE_NAME}-http.rule=Host(`${FRONTEND_DOMAIN}`) || Host(`${WWW_FRONTEND_DOMAIN}`)"
+      - "traefik.http.routers.${FRONTEND_SERVICE_NAME}-http.entrypoints=web"
+      - "traefik.http.routers.${FRONTEND_SERVICE_NAME}-http.middlewares=https-redirect"
+
+
+
+# Définitions explicites des volumes et réseaux pour une meilleure clarté
+networks:
+  webproxy:
+    external: true
+  default:
 
 volumes:
-  etudiant-data:
-
-networks:
-  etudiant-network:
-    driver: bridge
-
+  ${DB_VOLUME_NAME}:

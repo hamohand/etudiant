@@ -9,6 +9,7 @@ COPY . .
 # Assurez-vous que le nom du projet dans "output-path" correspond à votre angular.json
 RUN npm run build -- --configuration production --output-path=./dist
 
+#-----------------------
 # Étape 2: Service de l'application avec Nginx
 FROM nginx:1.25-alpine
 

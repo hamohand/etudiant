@@ -1,0 +1,20 @@
+# ============================
+# Base de Données (PostgreSQL)
+# ============================
+POSTGRES_IMAGE_TAG=16
+# Nom du service dans Docker Compose
+DB_SERVICE_NAME=db
+# Port interne de la base de données
+POSTGRES_PORT=5432
+# Identifiants
+POSTGRES_DB=etudiant
+POSTGRES_USER=med
+#<remplacer-par-un-mot-de-passe-solide>
+POSTGRES_PASSWORD=030809
+
+# ============================
+# Proxy Frontend (NGINX)
+# ============================
+# Ports de production exposés sur la machine hôte
+FRONT_PROXY_HTTP_PORT=80
+FRONT_PROXY_HTTPS_PORT=443
