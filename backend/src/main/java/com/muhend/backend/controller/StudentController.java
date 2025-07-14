@@ -10,7 +10,10 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/students")
+// --- CORRECTION ---
+// On supprime "/api" du mapping, car Traefik le gère déjà.
+// Spring ne verra que le chemin "/students".
+@RequestMapping("/students")
 @CrossOrigin(origins = "http://localhost:4200") // Allow requests from any origin (for development)
 public class StudentController {
 
