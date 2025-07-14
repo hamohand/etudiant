@@ -80,7 +80,8 @@ services:
       dockerfile: Dockerfile.prod # On utilise le Dockerfile de production
     container_name: ${PROJECT_NAME}-${FRONTEND_SERVICE_NAME}
     restart: unless-stopped
-    depends_on: backend
+    depends_on:
+      - backend
     networks:
       - default
       - webproxy
