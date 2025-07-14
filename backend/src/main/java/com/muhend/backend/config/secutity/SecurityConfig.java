@@ -20,22 +20,18 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // Appliquer la configuration CORS définie ci-dessous
+                // 1. La configuration CORS est conservée et reste active.
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
-                // Désactiver la protection CSRF, car elle n'est pas adaptée aux API REST sans état
-                // (d'autres mécanismes comme CORS et l'authentification par jeton la remplacent)
+                // 2. La protection CSRF reste désactivée.
                 .csrf(AbstractHttpConfigurer::disable)
 
-                // Définir les autorisations de requêtes
+                // 3. Toutes les règles d'autorisation sont remplacées par une seule
+                //    qui autorise toutes les requêtes, quelles qu'elles soient.
                 .authorizeHttpRequests(authz -> authz
-                        // Autoriser toutes les requêtes sur "/api/**".
-                        // Vous pourrez affiner cela plus tard si vous ajoutez de l'authentification.
-                        .requestMatchers("/api/**").permitAll()
-                        .requestMatchers("/api/students/**").permitAll()
-                        // Exiger une authentification pour toutes les autres requêtes (par sécurité)
-                        .anyRequest().authenticated()
+                        .anyRequest().permitAll()
                 );
+
 
         return http.build();
     }
