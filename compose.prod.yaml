@@ -23,12 +23,14 @@ x-traefik-backend-labels: &traefik-backend-labels
   # --- Middleware pour supprimer le préfixe /api ---
   "traefik.http.middlewares.api-stripprefix.stripprefix.prefixes": "/api"
   # --- Routeur HTTPS pour le backend ---
-  "traefik.http.routers.${BACKEND_SERVICE_NAME}-secure.rule": *traefik-host-rule
+  "traefik.http.routers.${BACKEND_SERVICE_NAME}-secure.rule": "(*traefik-host-rule) && PathPrefix(`/api`)"
+
   "traefik.http.routers.${BACKEND_SERVICE_NAME}-secure.entrypoints": "websecure"
   "traefik.http.routers.${BACKEND_SERVICE_NAME}-secure.tls.certresolver": "le"
   "traefik.http.routers.${BACKEND_SERVICE_NAME}-secure.middlewares": "api-stripprefix"
   # --- Routeur HTTP pour la redirection vers HTTPS ---
-  "traefik.http.routers.${BACKEND_SERVICE_NAME}-http.rule": *traefik-host-rule
+  "traefik.http.routers.${BACKEND_SERVICE_NAME}-http.rule": "(*traefik-host-rule) && PathPrefix(`/api`)"
+
   "traefik.http.routers.${BACKEND_SERVICE_NAME}-http.entrypoints": "web"
   "traefik.http.routers.${BACKEND_SERVICE_NAME}-http.middlewares": "https-redirect@docker"
   # --- Service pointant vers le conteneur backend ---
