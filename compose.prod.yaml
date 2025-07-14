@@ -79,7 +79,7 @@ services:
     container_name: ${PROJECT_NAME}-${FRONTEND_SERVICE_NAME}
     restart: unless-stopped
     networks:
-#      - default
+      - default
       - webproxy
     labels:
       <<: *traefik-frontend-labels
