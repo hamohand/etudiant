@@ -32,6 +32,7 @@ public class SecurityConfig {
                         // Autoriser toutes les requêtes sur "/api/**".
                         // Vous pourrez affiner cela plus tard si vous ajoutez de l'authentification.
                         .requestMatchers("/api/**").permitAll()
+                        .requestMatchers("/api/students/**").permitAll()
                         // Exiger une authentification pour toutes les autres requêtes (par sécurité)
                         .anyRequest().authenticated()
                 );
@@ -45,7 +46,7 @@ public class SecurityConfig {
 
         // --- IMPORTANT ---
         // Remplacez par le domaine exact de votre frontend
-        configuration.setAllowedOrigins(List.of("https://etudiant.enclume-numerique.com"));
+        configuration.setAllowedOrigins(List.of("https://etudiant.enclume-numerique.com", "https://www.etudiant.enclume-numerique.com"));
 
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
