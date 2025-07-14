@@ -8,5 +8,5 @@ import {RouterLink, RouterLinkActive, RouterOutlet} from '@angular/router';
   styleUrl: './app.css'
 })
 export class App {
-  protected title = 'frontend : Gestion des Étudiants';
+  protected title = 'Etudiants';
 }
